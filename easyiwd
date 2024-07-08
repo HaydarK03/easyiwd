@@ -8,7 +8,7 @@ easyiwd_head() {
 	clear
 	echo "----------------------------------------------------------------"
 	echo "                         EASSY IWD                              "
-	echo "                     copyright@HaydarK03                                             "
+	echo "                     copyright@HaydarK03                        "
 	echo "----------------------------------------------------------------"
 	echo ""
 	echo "Bugs Report"
@@ -20,11 +20,16 @@ easyiwd_head() {
 easyiwd_contdyn() {
 	read -p "add network name :" netname
 	if [[ ! -z $netname ]]; then
-		iwctl station wlan0 connect $netname
-		echo "Network Connected"
+		iwctl station wlan0 connect '$netname'
+		easyied_netstat
+	fi
+}
+
+easyied_netstat() {
+	if [[ ! -f /var/lib/iwd/$netname.psk ]]; then
+		echo "error network name incorrect"
 	else
-		echo "error network name incorect"
-		exit
+		echo "Network connected"
 	fi
 }
 
@@ -50,15 +55,57 @@ easyiwd_constat() {
 
 }
 
+easyiwd_settdns() {
+	sudo cat <<EOF >/etc/resolv.conf
+nameserver $dnsnets
+EOF
+}
+
+easyiwd_setstat() {
+	touch /var/lib/iwd/$netname.psk
+	sudo cat <<EOF >/var/lib/iwd/$netname.psk
+[IPv4]
+Address=$address
+Netmask=$netmask
+Gateway=$gateway
+Broadcast=$broadcs
+DNS=$dnsnets  
+EOF
+}
+
+easyiwd_intsysd() {
+	touch /etc/systemd/network/$netname.network
+	sudo cat <<EOF >/etc/systemd/network/$netname.network
+[match]
+
+  EOF
+}
+
+easyiwd_initenc() {
+	sudo cat <<EOF >/etc/iwd/main.conf
+[General]
+EnableNetworkConfiguration=true
+EOF
+}
+
+easyiwd_iwdconf() {
+	if [[ -f /etc/iwd/main.conf ]]; then
+		echo "main.conf already exist"
+	else
+		sudo touch /etc/iwd/main.conf
+		easyiwd_initenc
+		echo "Succesfully init main.conf"
+	fi
+}
+
 easyiwd_netmenu() {
-	local netact=("dynamic" "static" "scan device" "disconnect")
+	local netact=("dynamic" "static" "scan device" "disconnect" "enable network configuration")
 	echo "chose your method :"
 	for method in "${!netact[@]}"; do
 		echo "[$(($method + 1))] ${netact[$method]}"
 	done
 	read -p "select method using number : " getact
 	iwdact=${netact[$(($getact - 1))]}
-
 }
 
 easyiwd_connect() {
@@ -70,6 +117,8 @@ easyiwd_connect() {
 			easyiwd_constat
 		elif [[ $iwdact == "scan device" ]]; then
 			iwctl device list
+		elif [[ $iwdact == "enable network configuration" ]]; then
+			easyiwd_iwdconf
 		elif [[ $iwdact == "disconnect" ]]; then
 			iwctl station wlan0 disconnect
 			echo "Network disconnect"
