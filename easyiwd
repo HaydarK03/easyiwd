@@ -20,12 +20,12 @@ easyiwd_head() {
 easyiwd_contdyn() {
 	read -p "add network name :" netname
 	if [[ ! -z $netname ]]; then
-		iwctl station wlan0 connect '$netname'
-		easyied_netstat
+		iwctl station wlan0 connect $netname
+		easyiwd_netstat
 	fi
 }
 
-easyied_netstat() {
+easyiwd_netstat() {
 	if [[ ! -f /var/lib/iwd/$netname.psk ]]; then
 		echo "error network name incorrect"
 	else
@@ -109,7 +109,7 @@ easyiwd_netmenu() {
 }
 
 easyiwd_connect() {
-	iwctl station wlan0 get-networks &&
+	sudo iwctl station wlan0 get-networks &&
 		easyiwd_netmenu &&
 		if [[ $iwdact == "dynamic" ]]; then
 			easyiwd_contdyn
