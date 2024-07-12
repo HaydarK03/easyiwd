@@ -5,12 +5,12 @@
 ######################################
 
 netact=("dynamic" "static" "disconnect")
-dynact=("connect" "connect hidden")
 
 easyiwd_head() {
 	clear
 	echo "----------------------------------------------------------------"
 	echo "                         EASSY IWD                              "
+	echo "                                                  "
 	echo "----------------------------------------------------------------"
 	echo ""
 	echo "Bugs Report"
@@ -24,42 +24,23 @@ easyiwd_scanall() {
 	sudo iwctl device list
 }
 
-easyiwd_iwdconf() {
-	if [[ ! -f /etc/iwd/main.conf ]]; then
-		sudo touch /etc/iwd/main.conf
-		easyiwd_initenc
+easyiwd_contdyn() {
+	easyiwd_scanall &&
+		read -p "add network name :" netname
+	if [[ ! -z $netname ]]; then
+		iwctl station wlan0 connect $netname
+		easyiwd_netstat
 	fi
 }
 
-easyiwd_getsval() {
-	read -p "add network name  :" netname
-	read -sp "enter passphrase :" passnet
-}
-
-easyiwd_conshow() {
-	easyiwd_scanall &&
-		easyiwd_getsval &&
-		if [[ ! -z $netname ]]; then
-			iwctl --passphrase $passnet station wlan0 connect $netname
-			easyiwd_netstat
-		fi
-}
-
-easyiwd_conhidd() {
-	easyiwd_scanall &&
-		easyiwd_getsval &&
-		if [[ ! -z $netname ]]; then
-			iwctl --passphrase $passnet station wlan0 connect-hidden $netname
-			easyiwd_netstat
-		fi
-}
-
 easyiwd_netstat() {
-	status=$(iwctl station wlan0 show | grep -i $netname)
-	if [[ $status == *"            Connected network     $netname        "* ]]; then
+
+	status=$(iwctl staion wlan0 show | grep -i state)
+
+	if [[ $status == *"connected"* ]]; then
 		echo "network connected"
 	else
-		echo "please enter correct Network Name"
+		echo "network not connected"
 	fi
 }
 
@@ -69,9 +50,11 @@ easyiwd_intconf() {
 	read -p "Gateway   :" gateway
 	read -p "broadcast :" broadcs
 	read -p "DNS       :" dnsnets
+
 }
 
 easyiwd_constat() {
+
 	easyiwd_contdyn &&
 		easyiwd_intconf &&
 		local iwdefin=('Address' 'Netmask' 'Gateway' 'Broadcast' 'DNS')
@@ -81,6 +64,7 @@ easyiwd_constat() {
 	for i in ${!iwdefin[@]}; do
 		echo "${iwdefin[i]} = ${iwvalue[i]}"
 	done
+
 }
 
 easyiwd_settdns() {
@@ -116,26 +100,11 @@ EnableNetworkConfiguration=true
 EOF
 }
 
-easyiwd_dynmenu() {
-	echo "chose your method :"
-	for dynmet in "${!dynact[@]}"; do
-		echo "[$(($dynmet + 1))] ${dynact[$dynmet]}"
-	done
-	read -p "select method using number : " dynsact
-	iwdact=${dynact[$(($dynsact - 1))]}
-}
-
-easyiwd_contdyn() {
-	easyiwd_dynmenu &&
-		if [[ $iwdact == "connect" ]]; then
-			clear
-			easyiwd_conshow
-		elif [[ $iwdact == "connect hidden" ]]; then
-			clear
-			easyiwd_conhidd
-		else
-			echo "error you must enter the correct number"
-		fi
+easyiwd_iwdconf() {
+	if [[ ! -f /etc/iwd/main.conf ]]; then
+		sudo touch /etc/iwd/main.conf
+		easyiwd_initenc
+	fi
 }
 
 easyiwd_netmenu() {
@@ -161,8 +130,8 @@ easyiwd_connect() {
 		else
 			echo "error you must enter the correct number"
 		fi
-}
 
+}
 easyiwd_init() {
 	easyiwd_head
 	easyiwd_iwdconf
@@ -170,3 +139,9 @@ easyiwd_init() {
 }
 
 easyiwd_init
+
+#persimple tampilan hanya ada 2 pilihan static dan dynamic
+#scan dan device langsung ditampilkan
+
+#masing masing fitur deradapat scan dan scan hidden
+#dynamic connect biasa dan connect hidden
